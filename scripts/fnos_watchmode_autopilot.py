@@ -39,20 +39,30 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-# 尝试载入 python-dotenv
-try:
-    from dotenv import load_dotenv
-    # 优先载入上一级或当前目录的 .env
-    env_path = Path(__file__).resolve().parent.parent / ".env"
-    if env_path.exists():
-        load_dotenv(dotenv_path=env_path)
-    else:
-        load_dotenv()
-except ImportError:
-    pass
+# 尝试载入 python-dotenv 或内置极简解析器 (确保零外部依赖也能读 .env)
+def _load_fallback_dotenv(path: Path):
+    if not path.exists():
+        return
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                k = k.strip()
+                v = v.strip().strip("\"'")
+                if k and k not in os.environ:
+                    os.environ[k] = v
+    except Exception:
+        pass
 
-# 基础目录与持久化数据库路径
 BASE_DIR = Path(__file__).resolve().parent.parent
+env_path = BASE_DIR / ".env"
+if env_path.exists():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(dotenv_path=env_path)
+    except ImportError:
+        _load_fallback_dotenv(env_path)
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 CACHE_DB_PATH = DATA_DIR / "autopilot_cache.db"
@@ -62,6 +72,9 @@ SERIES_TRACKER_PATH = DATA_DIR / "series_tracker.json"
 DOUBAN_SYNCED_PATH = DATA_DIR / "douban_synced.json"
 
 # 配置参数读取
+def is_valid_key(val: Optional[str]) -> bool:
+    return bool(val and not val.strip().lower().startswith("your_"))
+
 DOUBAN_UID = os.getenv("DOUBAN_UID", "")
 TMDB_API_KEY = os.getenv("TMDB_API_KEY", "")
 TMDB_READ_TOKEN = os.getenv("TMDB_READ_TOKEN", "")
@@ -171,8 +184,7 @@ def send_notification(title: str, markdown_content: str):
 
 def check_streaming_release(title_id: str | int) -> List[Dict[str, Any]]:
     """查询影片在全球各大流媒体平台（Netflix / Disney+ / Apple TV+ 等）的上映状态"""
-    if not WATCHMODE_API_KEY:
-        logger.warning("未配置 WATCHMODE_API_KEY，跳过流媒体出种查询。")
+    if not is_valid_key(WATCHMODE_API_KEY):
         return []
 
     cache_key = f"watchmode_sources_{title_id}"
@@ -196,7 +208,7 @@ def check_streaming_release(title_id: str | int) -> List[Dict[str, Any]]:
 
 def search_watchmode_title(query: str) -> List[Dict[str, Any]]:
     """按片名在 Watchmode 检索对应作品 ID"""
-    if not WATCHMODE_API_KEY:
+    if not is_valid_key(WATCHMODE_API_KEY):
         return []
 
     cache_key = f"watchmode_search_{query}"
@@ -338,8 +350,8 @@ def check_series_tracker():
 def sync_douban_wishlist(uid: Optional[str] = None, dry_run: bool = False) -> List[Dict[str, Any]]:
     """监听豆瓣公开 XML 订阅流，提取新增想看条目并自动接入流水线"""
     target_uid = uid or DOUBAN_UID
-    if not target_uid:
-        print("❌ 未配置 DOUBAN_UID，请在 .env 中设置或通过参数传入。")
+    if not is_valid_key(target_uid):
+        print("  💡 未配置 DOUBAN_UID (或仍为占位符)，跳过豆瓣想看同步。在 .env 中填入你的豆瓣主页后缀 UID 即可启用。")
         return []
 
     feed_url = f"https://www.douban.com/feed/people/{target_uid}/interests"
@@ -436,7 +448,7 @@ def sync_douban_wishlist(uid: Optional[str] = None, dry_run: bool = False) -> Li
 
 def search_tmdb_metadata(query_name: str) -> Optional[Dict[str, Any]]:
     """检索 TMDb 官方中文元数据、演职员与 4K 竖版海报"""
-    if not TMDB_API_KEY:
+    if not is_valid_key(TMDB_API_KEY):
         return None
 
     cache_key = f"tmdb_search_{query_name}"
@@ -544,14 +556,34 @@ def search_bangumi(query: str) -> Optional[Dict[str, Any]]:
         if not items:
             return None
         bgm = items[0]
+        bgm_id = bgm.get("id")
+        score = (bgm.get("rating") or {}).get("score")
+        rank = bgm.get("rank")
+        air_date = bgm.get("air_date") or ""
+        total_eps = bgm.get("eps_count") or bgm.get("eps")
+
+        # 尝试从 v0 接口补全精确评分与放送日期
+        if bgm_id:
+            try:
+                sub_url = f"https://api.bgm.tv/v0/subjects/{bgm_id}"
+                sub_req = urllib.request.Request(sub_url, headers={"User-Agent": BANGUMI_APP_ID})
+                with urllib.request.urlopen(sub_req, timeout=5) as s_resp:
+                    s_data = json.loads(s_resp.read().decode("utf-8"))
+                    score = (s_data.get("rating") or {}).get("score") or score
+                    rank = (s_data.get("rating") or {}).get("rank") or rank
+                    air_date = s_data.get("date") or air_date
+                    total_eps = s_data.get("total_episodes") or total_eps
+            except Exception:
+                pass
+
         return {
             "name": bgm.get("name"),
             "name_cn": bgm.get("name_cn") or bgm.get("name"),
-            "score": bgm.get("rating", {}).get("score"),
-            "rank": bgm.get("rank"),
-            "eps": bgm.get("eps_count"),
-            "air_date": bgm.get("air_date"),
-            "summary": bgm.get("summary")
+            "score": score or "暂无",
+            "rank": rank or "暂无",
+            "eps": total_eps or "未知",
+            "air_date": air_date or "待定",
+            "summary": bgm.get("summary") or "暂无简介"
         }
     except Exception as e:
         logger.error(f"Bangumi API 错误: {e}")
@@ -569,13 +601,19 @@ def run_daily_radar():
 
     # 1. 待播院线片 Watchlist 巡检
     print("[1/5] 待播院线片 Watchlist 巡检: 正在比对流媒体首播排期...")
-    if WATCHLIST_PATH.exists():
-        with open(WATCHLIST_PATH, "r", encoding="utf-8") as f:
-            watchlist = json.load(f)
-        for item in watchlist:
-            sources = check_streaming_release(item["id"])
-            if sources:
-                print(f"  🎉 检出上线: 《{item['title']}》 已在 {sources[0].get('name')} 首播！")
+    watchlist_file = WATCHLIST_PATH if WATCHLIST_PATH.exists() else (BASE_DIR / "config" / "watchlist.example.json")
+    if watchlist_file.exists():
+        try:
+            with open(watchlist_file, "r", encoding="utf-8") as f:
+                watchlist = json.load(f)
+            for item in watchlist:
+                sources = check_streaming_release(item["id"])
+                if sources:
+                    print(f"  🎉 检出上线: 《{item.get('zh_title') or item.get('title')}》 已在 {sources[0].get('name')} 首播！")
+                else:
+                    print(f"  ⏳ 监控中: 《{item.get('zh_title') or item.get('title')}》 (状态: {item.get('status', 'watching')})")
+        except Exception as e:
+            print(f"  待播清单读取异常: {e}")
     else:
         print("  待播清单为空。")
 
@@ -598,9 +636,21 @@ def run_daily_radar():
 
     # 3. SubHD 字幕成熟出库校验
     print("[3/5] SubHD 字幕成熟度嗅探校验...")
+    if queue:
+        for q in queue:
+            zh = q.get("zh_title") or q.get("title")
+            if zh:
+                is_mat, tag = check_subhd_mature(zh)
+                if is_mat:
+                    print(f"  🟢 《{zh}》 检测到精校字幕提前成熟 (命中: {tag})，提前出库！")
+                else:
+                    print(f"  ⏳ 《{zh}》 暂无精校字幕，保持倒计时。")
+    else:
+        print("  当前暂无待嗅探的字幕缓冲项目。")
 
     # 4. 长周期美剧完结追踪
     print("[4/5] 长周期剧集追踪: 正在巡检完结日+7天状态...")
+    check_series_tracker()
 
     # 5. 豆瓣想看动态流同步
     print("[5/5] 豆瓣想看动态流同步...")

@@ -74,7 +74,7 @@ def query_watched_media(db_path: Path) -> Tuple[List[Dict[str, Any]], List[Dict[
     3. protected_items: 受白名单保护的已看项目
     """
     if not db_path.exists():
-        logger.error(f"飞牛影视数据库不存在: {db_path}")
+        logger.warning(f"未检测到飞牛影视数据库: {db_path} (若在本地电脑测试，此项属正常现象；在飞牛 NAS 宿主机上运行即可自动读取)")
         return [], [], []
 
     now_ms = int(time.time() * 1000)

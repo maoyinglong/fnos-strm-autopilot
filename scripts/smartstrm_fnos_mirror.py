@@ -108,8 +108,13 @@ def sync_directory(source_dir: Path, target_dir: Path, delete: bool = False, dry
 
 
 def main():
+    base_dir = Path(__file__).resolve().parent.parent
+    default_cfg = base_dir / "config" / "fnos-mirror.json"
+    if not default_cfg.exists():
+        default_cfg = base_dir / "config" / "fnos-mirror.example.json"
+
     parser = argparse.ArgumentParser(description="SmartStrm to fnOS Local Mirror Sync")
-    parser.add_argument("--config", required=True, help="映射配置文件路径 (JSON 格式)")
+    parser.add_argument("--config", default=str(default_cfg), help="映射配置文件路径 (默认: config/fnos-mirror.json)")
     parser.add_argument("--delete", action="store_true", help="同步删除目标目录中的孤儿死链文件")
     parser.add_argument("--dry-run", action="store_true", help="演练模式，仅打印日志不实际写盘")
 
