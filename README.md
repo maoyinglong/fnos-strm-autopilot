@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![fnOS: Compatible](https://img.shields.io/badge/fnOS-0.8+-orange.svg)](https://www.fnnas.com/)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-brightgreen.svg)](https://www.python.org/)
-[![Docker: Ready](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](https://www.docker.com/)
+[![fnOS AppCenter: Zero Docker](https://img.shields.io/badge/fnOS%20AppCenter-Zero%20Docker-blue.svg)](#-设计哲学拒绝手写-docker-compose)
 [![Streaming: STRM 302](https://img.shields.io/badge/Streaming-STRM%20HTTP%20206-success.svg)](#-底层机制为什么-strm-是终极形态)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/maoyinglong/fnos-strm-autopilot/pulls)
 
@@ -37,6 +37,17 @@
 - **免下载、零硬盘占用**：利用几 KB 的 `.strm` 虚拟直链，替代动辄几十 TB 昂贵嘈杂的机械硬盘阵列；
 - **告别生肉机翻**：设立 IMDb 7+ 高分新片 7 天防御性缓冲队列，配合 SubHD 原生免 Key 探针，精校字幕成熟才入库；
 - **看完即焚优雅释放**：与飞牛原生数据库深度联动，单片看后 24 小时自动移入网盘回收站，永久保护儿童动画与经典老片。
+
+---
+
+## 💡 设计哲学：拒绝手写 Docker Compose
+
+很多 NAS 教程动辄甩出一长串复杂的 `docker-compose.yml`，要求小白用户去 SSH 命令行里手写挂载、映射端口和排查网络互通，极易劝退新手。
+
+**在飞牛私有云（fnOS）上，手写 Docker Compose 纯属多此一举：**
+1. **官方应用中心开箱即用**：飞牛官方及社区应用中心已经深度封装并收录了 **`SmartStrm`** 与 **`夸克网盘自动转存`（内置 PanSou 搜盘引擎）**。在飞牛桌面上点击几下鼠标就能完成全套服务的自动安装、依赖解析与生命周期守护托管，绝无端口冲突烦恼；
+2. **原生权限与路径互通**：飞牛官方套件自动与系统内置的影视数据库（`trimmedia.db`）和本地公共共享池（`/vol1/1000/公共共享/视频/`）保持最高效率的本地通信，避免了跨容器网络隔离与权限映射难题；
+3. **轻量自动化无感运行**：本项目提供的调度工具与同步看门狗均为纯原生的无状态轻量脚本，仅需系统的系统定时任务（Crontab）或随需运行，**零额外内存常驻，不给 NAS 增加哪怕 1MB 冗余负担**！
 
 ---
 
@@ -322,8 +333,6 @@ fnos-strm-autopilot/
 ├── README.md                           # 本指南
 ├── LICENSE                             # MIT 开源协议
 ├── quickstart.sh                       # 一键极速起航与配置向导脚本
-├── Dockerfile                          # 容器化运行镜像定义
-├── docker-compose.yml                  # 伴生搜源与调度编排模板
 ├── requirements.txt                    # Python 依赖
 ├── .env.example                        # 环境变量模板
 ├── config/
