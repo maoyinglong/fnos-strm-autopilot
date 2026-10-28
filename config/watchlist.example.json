@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1688840,
+    "title": "Avengers: Secret Wars",
+    "zh_title": "复仇者联盟：秘密战争",
+    "year": 2027,
+    "type": "movie",
+    "status": "watching",
+    "target_regions": ["US", "HK", "TW"],
+    "created_at": "2026-10-28"
+  },
+  {
+    "id": 1995587,
+    "title": "Dune: Part Three",
+    "zh_title": "沙丘3：救世主",
+    "year": 2026,
+    "type": "movie",
+    "status": "watching",
+    "target_regions": ["US", "HK"],
+    "created_at": "2026-10-28"
+  }
+]

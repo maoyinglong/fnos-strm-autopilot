@@ -235,25 +235,41 @@ python3 scripts/fnos_watched_cleaner.py --dry-run
 
 ## 🚀 快速开始部署指南
 
-### 步骤一：飞牛应用中心安装基础套件
-1. 登录飞牛 NAS 桌面 -> **应用中心**；
-2. 搜索并安装 **`SmartStrm`**；
-3. 打开 SmartStrm 控制台（`http://<NAS_IP>:8024`），在【存储管理】中扫码绑定 **115 开放平台 (open115)** 与 **夸克网盘TV (quark_tv)**。
+### 💡 零成本极速起航（推荐，开箱即用）
+无需复杂配置，直接使用我们提供的一键起航脚本，自动检测依赖并执行连通性自检：
 
-### 步骤二：克隆本项目并配置环境
 ```bash
 # 1. 克隆项目仓库
 git clone https://github.com/maoyinglong/fnos-strm-autopilot.git
 cd fnos-strm-autopilot
 
-# 2. 复制配置文件模板
-cp .env.example .env
-cp config/fnos-mirror.example.json config/fnos-mirror.json
-
-# 3. 安装依赖
-pip install -r requirements.txt
+# 2. 一键运行起航脚本 (自动完成依赖自检与配置初始化)
+bash quickstart.sh
 ```
 
+起航脚本会自动调用 `scripts/verify_setup.py` 对你的 Python 版本、网络连通性（豆瓣 RSS、SubHD 探针、Bangumi、TMDb）进行打分诊断。
+
+---
+
+### 🎁 零门槛指南：完全免费即可畅玩的核心功能
+很多朋友担心“是不是必须花钱买 API？”**完全不需要！**
+- **豆瓣想看无感同步**：100% 免费，免 Key，免登录，填入豆瓣个人主页后缀 UID 即可直接抓取；
+- **SubHD 字幕成熟度嗅探**：100% 免费，免 Key 原生接口，自动识别精校/特效/双语；
+- **Bangumi 番组计划**：100% 免费，开放接口直接追踪每日新番放送排期；
+- **「看完即焚」空间释放**：100% 本地运行，只读审计飞牛内置数据库，自动清理已看大片；
+- **TMDb 元数据刮削**：官方开发者 API 完全免费开放申请（只需邮箱注册账号）；
+- **Watchmode 版权雷达**：每月赠送 2500 次免费调用配额，个人观影绰绰有余。
+
+---
+
+### 标准生产部署流程
+
+#### 步骤一：飞牛应用中心安装基础套件
+1. 登录飞牛 NAS 桌面 -> **应用中心**；
+2. 搜索并安装 **`SmartStrm`**；
+3. 打开 SmartStrm 控制台（`http://<NAS_IP>:8024`），在【存储管理】中扫码绑定 **115 开放平台 (open115)** 与 **夸克网盘TV (quark_tv)**。
+
+#### 步骤二：环境配置与自定义参数
 编辑 `.env` 填入你的配置（详见 [.env.example](.env.example)）：
 ```bash
 DOUBAN_UID="your_douban_id"               # 你的豆瓣个人主页后缀 ID
@@ -262,22 +278,26 @@ WATCHMODE_API_KEY="your_watchmode_key"    # Watchmode API Key (每月 2500 次�
 SMARTSTRM_BASE_URL="http://127.0.0.1:8024" # SmartStrm 本地访问地址
 ```
 
-### 步骤三：验证核心功能
+#### 步骤三：验证核心功能 (自带演示基准)
+即使尚未配置任何 Key，项目也内置了完整的演示数据集，可直接体验：
 ```bash
-# 测试豆瓣想看同步
-python3 scripts/fnos_watchmode_autopilot.py douban --dry-run
+# 一键运行网络与环境全面自检
+python3 scripts/verify_setup.py
 
-# 测试 TMDb 刮削
-python3 scripts/fnos_watchmode_autopilot.py tmdb "奥本海默"
+# 测试长周期美剧追踪 (体验完结日+7天算法)
+python3 scripts/fnos_watchmode_autopilot.py series
 
-# 测试 SubHD 字幕探针
+# 测试 SubHD 字幕成熟嗅探
 python3 scripts/fnos_watchmode_autopilot.py sub "死侍与金刚狼"
 
-# 测试看完即焚看门狗
+# 测试豆瓣想看同步 (演练模式)
+python3 scripts/fnos_watchmode_autopilot.py douban --dry-run
+
+# 测试看完即焚看门狗 (安全审计模式，绝不误删)
 python3 scripts/fnos_watched_cleaner.py --dry-run
 ```
 
-### 步骤四：配置 Crontab 错峰自动化
+#### 步骤四：配置 Crontab 错峰自动化
 参考 [config/crontab.example](config/crontab.example) 添加系统定时任务：
 ```cron
 # 00:05 看完即焚已看清理巡检
@@ -301,6 +321,7 @@ python3 scripts/fnos_watched_cleaner.py --dry-run
 fnos-strm-autopilot/
 ├── README.md                           # 本指南
 ├── LICENSE                             # MIT 开源协议
+├── quickstart.sh                       # 一键极速起航与配置向导脚本
 ├── Dockerfile                          # 容器化运行镜像定义
 ├── docker-compose.yml                  # 伴生搜源与调度编排模板
 ├── requirements.txt                    # Python 依赖
@@ -308,11 +329,15 @@ fnos-strm-autopilot/
 ├── config/
 │   ├── config.example.yaml             # SmartStrm 核心配置模板
 │   ├── fnos-mirror.example.json        # 直链镜像同步映射配置
+│   ├── watchlist.example.json          # 待播监控预设模板
+│   ├── series_tracker.example.json     # 长剧集追踪预设模板
 │   └── crontab.example                 # 错峰自动化定时任务链
 ├── scripts/
+│   ├── quickstart.sh                   # 一键极速起航引导
+│   ├── verify_setup.py                 # 一键环境诊断与连通性自检工具
 │   ├── fnos_watchmode_autopilot.py     # 8大玩法核心调度中枢
 │   ├── smartstrm_fnos_mirror.py        # 本地直链增量镜像同步器 (带 --delete)
-│   └── fnos_watched_cleaner.py         # 「看完即焚」空间自治清理引擎
+│   └── fnos_watched_cleaner.py         # 「看完即焚」空间自治清理引擎 (支持 --confirm-delete)
 └── docs/
     ├── 01-architecture-overview.md     # 架构与 STRM 秒播原理解析
     ├── 02-smartstrm-and-cloud-setup.md # SmartStrm 安装与双网盘挂载 SOP

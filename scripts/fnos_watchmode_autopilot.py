@@ -302,11 +302,16 @@ def add_to_buffer_queue(title: str, zh_title: str, imdb_score: float, platform: 
 
 def check_series_tracker():
     """长周期剧集完结巡检：完结日 + 7 天黄金打包期触发"""
-    if not SERIES_TRACKER_PATH.exists():
-        print("长周期剧集追踪清单为空。")
-        return
+    tracker_path = SERIES_TRACKER_PATH
+    if not tracker_path.exists():
+        example_path = BASE_DIR / "config" / "series_tracker.example.json"
+        if example_path.exists():
+            tracker_path = example_path
+        else:
+            print("长周期剧集追踪清单为空。")
+            return
 
-    with open(SERIES_TRACKER_PATH, "r", encoding="utf-8") as f:
+    with open(tracker_path, "r", encoding="utf-8") as f:
         series_list = json.load(f)
 
     today_str = datetime.date.today().isoformat()
@@ -659,8 +664,9 @@ def main():
             else:
                 add_watchlist(args.title)
         elif args.action == "list":
-            if WATCHLIST_PATH.exists():
-                print(WATCHLIST_PATH.read_text(encoding="utf-8"))
+            list_path = WATCHLIST_PATH if WATCHLIST_PATH.exists() else (BASE_DIR / "config" / "watchlist.example.json")
+            if list_path.exists():
+                print(list_path.read_text(encoding="utf-8"))
             else:
                 print("监控清单为空。")
     elif args.command == "tmdb":

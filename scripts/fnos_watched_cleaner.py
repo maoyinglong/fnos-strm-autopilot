@@ -171,6 +171,7 @@ def main():
         help="飞牛影视数据库 trimmedia.db 路径"
     )
     parser.add_argument("--dry-run", action="store_true", help="演练模式，仅查询与统计，不执行实际删除")
+    parser.add_argument("--confirm-delete", action="store_true", help="确认物理执行清理（删除本地 .strm 虚拟直链文件）。为防止误删，默认仅查询，必须显式传入此参数才会执行实际删除")
     parser.add_argument("--send-report", action="store_true", help="生成报告并打印汇总")
 
     args = parser.parse_args()
@@ -201,8 +202,41 @@ def main():
         for p in protected[:5]:
             logger.info(f"   - [白名单保留] 《{p.get('title') or p.get('display_title')}》")
 
-    if args.dry_run:
+    if args.confirm_delete and not args.dry_run:
+        logger.info("⚡ 正在执行物理清理...")
+        deleted_count = 0
+        # 1. 清理已看电影 .strm 文件
+        for m in movies:
+            p_str = m.get("path")
+            if p_str and p_str.endswith(".strm"):
+                strm_file = Path(p_str)
+                if strm_file.exists():
+                    try:
+                        strm_file.unlink()
+                        deleted_count += 1
+                        logger.info(f"   ✔ 已删除本地电影 STRM: {strm_file.name}")
+                    except Exception as e:
+                        logger.error(f"   ✖ 删除失败 {strm_file}: {e}")
+
+        # 2. 清理已看电视剧整季 .strm 目录
+        for t in tvs:
+            sample_p = t.get("sample_path")
+            if sample_p:
+                season_dir = Path(sample_p).parent
+                if season_dir.exists() and ("Season" in season_dir.name or "第" in season_dir.name):
+                    try:
+                        for f in season_dir.glob("*.strm"):
+                            f.unlink()
+                            deleted_count += 1
+                        logger.info(f"   ✔ 已清理电视剧整季 STRM 目录: {season_dir.name}")
+                    except Exception as e:
+                        logger.error(f"   ✖ 清理整季失败 {season_dir}: {e}")
+
+        logger.info(f"✅ 物理清理执行完毕，共清理 {deleted_count} 个本地直链文件。")
+    elif args.dry_run:
         logger.info("💡 当前为 --dry-run 演练模式，未执行任何物理删除。")
+    else:
+        logger.info("💡 默认安全审计模式，未传入 --confirm-delete 参数，未执行物理删除。")
 
 
 if __name__ == "__main__":

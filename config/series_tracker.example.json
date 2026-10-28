@@ -1,0 +1,21 @@
+[
+  {
+    "id": 94997,
+    "title": "House of the Dragon",
+    "zh_title": "龙之家族",
+    "season": 4,
+    "status": "tracking",
+    "scheduled_trigger_date": "2026-11-15",
+    "notes": "大结局开播后锁定 7 天黄金打包期，自动抓取整季 4K HDR 双语特效字幕压制合集"
+  },
+  {
+    "id": 66732,
+    "title": "Stranger Things",
+    "zh_title": "怪奇物语",
+    "season": 5,
+    "status": "completed",
+    "scheduled_trigger_date": "2026-10-20",
+    "completed_at": "2026-10-21",
+    "notes": "最终季全季已完结并归档至飞牛媒体库"
+  }
+]
