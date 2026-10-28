@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "description": "SmartStrm 本地直链同步至飞牛影视公共共享池的映射矩阵",
+  "options": {
+    "auto_create_dirs": true,
+    "delete_orphans": true,
+    "skip_extensions": [".nfo", ".txt", ".url", ".docx", ".pdf", ".html"],
+    "allowed_extensions": [".strm", ".srt", ".ass", ".sup", ".vtt"]
+  },
+  "mappings": [
+    {
+      "source_strm_dir": "/var/apps/smartstrm/shares/SmartStrm/strm/115_movies",
+      "target_fnos_dir": "/vol1/1000/公共共享/视频/电影/SmartStrm_115",
+      "category": "电影"
+    },
+    {
+      "source_strm_dir": "/var/apps/smartstrm/shares/SmartStrm/strm/115_tv",
+      "target_fnos_dir": "/vol1/1000/公共共享/视频/电视剧/SmartStrm_115",
+      "category": "电视剧"
+    },
+    {
+      "source_strm_dir": "/var/apps/smartstrm/shares/SmartStrm/strm/quark_movies",
+      "target_fnos_dir": "/vol1/1000/公共共享/视频/电影/SmartStrm_Quark",
+      "category": "电影"
+    },
+    {
+      "source_strm_dir": "/var/apps/smartstrm/shares/SmartStrm/strm/quark_tv",
+      "target_fnos_dir": "/vol1/1000/公共共享/视频/电视剧/SmartStrm_Quark",
+      "category": "电视剧"
+    }
+  ]
+}

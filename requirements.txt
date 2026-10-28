@@ -1,0 +1,4 @@
+# fnOS STRM Autopilot - 核心依赖
+requests>=2.31.0
+pyyaml>=6.0.1
+python-dotenv>=1.0.1

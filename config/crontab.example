@@ -1,0 +1,33 @@
+# ==============================================================================
+# 🎬 fnOS STRM Autopilot - 生产环境 Crontab 错峰自动化时钟链
+# 通过系统的 crontab -e 部署，保障凌晨无人驾驶自治
+# ==============================================================================
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# ------------------------------------------------------------------------------
+# 1. 凌晨空间治理：已看电影与电视剧「看完即焚」巡检 (00:05)
+# ------------------------------------------------------------------------------
+5 0 * * * python3 /app/scripts/fnos_watched_cleaner.py --send-report >> /app/logs/cleaner.log 2>&1
+
+# ------------------------------------------------------------------------------
+# 2. 凌晨错峰扫描：触发 SmartStrm 生成最新网盘直链 (03:10 - 04:30)
+# ------------------------------------------------------------------------------
+# 03:10 触发 115 电影扫描
+10 3 * * * curl -s -X POST "http://127.0.0.1:8024/api/tasks/115_movies/run" -H "Content-Type: application/json" -d '{"path":"/影音/电影"}' >> /app/logs/strm_trigger.log 2>&1
+
+# 03:35 触发 115 电视剧扫描
+35 3 * * * curl -s -X POST "http://127.0.0.1:8024/api/tasks/115_tv/run" -H "Content-Type: application/json" -d '{"path":"/影音/电视剧"}' >> /app/logs/strm_trigger.log 2>&1
+
+# 04:00 触发 夸克 电影与剧集扫描
+0 4 * * * curl -s -X POST "http://127.0.0.1:8024/api/tasks/quark_movies/run" -H "Content-Type: application/json" -d '{"path":"/影音/电影"}' >> /app/logs/strm_trigger.log 2>&1
+
+# ------------------------------------------------------------------------------
+# 3. 镜像同步：将 SmartStrm 生成池同步到飞牛共享目录，带 --delete 彻底清死链 (05:00)
+# ------------------------------------------------------------------------------
+0 5 * * * python3 /app/scripts/smartstrm_fnos_mirror.py --config /app/config/fnos-mirror.json --delete >> /app/logs/mirror.log 2>&1
+
+# ------------------------------------------------------------------------------
+# 4. 早间全域雷达：巡检豆瓣想看、Watchmode出种雷达、SubHD字幕探针与三端推送 (07:00)
+# ------------------------------------------------------------------------------
+0 7 * * * python3 /app/scripts/fnos_watchmode_autopilot.py radar >> /app/logs/radar.log 2>&1

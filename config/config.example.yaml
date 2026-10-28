@@ -1,0 +1,71 @@
+# ==============================================================================
+# 🎬 SmartStrm 与媒体中枢配置示例 (config.example.yaml)
+# 用于配置 SmartStrm 的存储端点、增量扫描任务与防风控参数
+# ==============================================================================
+
+server:
+  host: "0.0.0.0"
+  port: 8024
+  auth:
+    enabled: true
+    username: "admin"
+    password_hash: "" # 首次在 WebUI 设置
+
+storage:
+  # 115 开放平台驱动配置
+  - name: "115_main"
+    type: "open115"
+    rate_limit_per_second: 1 # 严格限速 1秒1次，平稳防封
+    scan_interval_hours: 6
+    paths:
+      - "/影音/电影"
+      - "/影音/电视剧"
+      - "/影音/动画"
+      - "/影音/纪录片"
+
+  # 夸克网盘 TV 直链驱动配置 (支持 302/CDN 原画直链串流)
+  - name: "quark_main"
+    type: "quark_tv"
+    mode: "streaming"
+    rate_limit_per_second: 2
+    paths:
+      - "/影音/电影"
+      - "/影音/剧集"
+      - "/影音/动画"
+
+tasks:
+  - id: "115_movies"
+    name: "115 电影增量直链生成"
+    storage: "115_main"
+    cloud_path: "/影音/电影"
+    output_dir: "/var/apps/smartstrm/shares/SmartStrm/strm/115_movies"
+    incremental: true
+    dir_time_check: true
+    keep_local_asset: true # 保留本地字幕与海报
+
+  - id: "115_tv"
+    name: "115 剧集增量直链生成"
+    storage: "115_main"
+    cloud_path: "/影音/电视剧"
+    output_dir: "/var/apps/smartstrm/shares/SmartStrm/strm/115_tv"
+    incremental: true
+    dir_time_check: true
+    keep_local_asset: true
+
+  - id: "quark_movies"
+    name: "夸克 电影增量直链生成"
+    storage: "quark_main"
+    cloud_path: "/影音/电影"
+    output_dir: "/var/apps/smartstrm/shares/SmartStrm/strm/quark_movies"
+    incremental: true
+    dir_time_check: true
+    keep_local_asset: true
+
+  - id: "quark_tv"
+    name: "夸克 剧集增量直链生成"
+    storage: "quark_main"
+    cloud_path: "/影音/剧集"
+    output_dir: "/var/apps/smartstrm/shares/SmartStrm/strm/quark_tv"
+    incremental: true
+    dir_time_check: true
+    keep_local_asset: true
