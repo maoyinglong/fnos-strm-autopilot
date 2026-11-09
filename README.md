@@ -232,7 +232,7 @@ python3 scripts/fnos_watched_cleaner.py --dry-run
 
 ---
 
-## ⚠️ 生产环境 5 大前线避坑铁律
+## ⚠️ 生产环境 7 大前线避坑铁律
 
 在数万部影片的实战治理中，我们踩平了以下大坑，请务必严格恪守：
 
@@ -241,6 +241,8 @@ python3 scripts/fnos_watched_cleaner.py --dry-run
 3. **飞牛图片代理两级散列硬编码限制**：飞牛内置图片反代服务强制匹配 `/img/{dir1}/{dir2}/poster.webp`。如果手动注入海报直接写单级目录，Nginx 会报 `501 Not Implemented` 导致海报裂开白板。
 4. **公网网盘中性英文/拼音命名隔离**：敏感或争议题材在 115 / 夸克网盘端一律使用中性英文/拼音命名（如 `Blind.Way.2017`），本地飞牛通过 `.strm` 解耦承接中文海报，物理规避云端风控。
 5. **上游 API 强缓存设计**：底层内置 SQLite 强缓存（影片详情 7 天、排期 24 小时），日常定时巡检缓存命中率 > 95%，保护免费配额并杜绝 429 限流。
+6. **盘搜关键词去噪与实实验收门禁**：盘搜关键词切忌生硬拼接“4K HDR”长尾词（极易引发 0 命中），必须清洗提取纯片名；同时必须引入物理校验门禁（`verify_strm_exists`），未检测到 `.strm` 物理落地绝不虚报就绪。
+7. **飞牛 NAS 偶发 IPv6 黑洞导致 SmartStrm 握手卡顿**：家庭宽带开启 IPv6 时，若运营商对网盘端点 IPv6 丢包，Linux 默认优先 IPv6 会导致每次请求阻塞 120 秒超时。在飞牛宿主机 `/etc/gai.conf` 中开启 `precedence ::ffff:0:0/96 100` 即可秒级解决。
 
 ---
 
@@ -345,6 +347,7 @@ fnos-strm-autopilot/
 │   ├── quickstart.sh                   # 一键极速起航引导
 │   ├── verify_setup.py                 # 一键环境诊断与连通性自检工具
 │   ├── fnos_watchmode_autopilot.py     # 8大玩法核心调度中枢
+│   ├── fnos_media_auto_ingest.py       # 影视自动转存与STRM闭环入库引擎 (带实实验收门禁)
 │   ├── smartstrm_fnos_mirror.py        # 本地直链增量镜像同步器 (带 --delete)
 │   └── fnos_watched_cleaner.py         # 「看完即焚」空间自治清理引擎 (支持 --confirm-delete)
 └── docs/
@@ -353,7 +356,7 @@ fnos-strm-autopilot/
     ├── 03-douban-rss-and-radar.md       # 豆瓣 RSS 捕获与出种雷达
     ├── 04-subhd-probe-and-buffer.md     # SubHD 探针与 7天缓冲队列
     ├── 05-watched-cleaner-sop.md        # 看完即焚与白名单守护规约
-    └── 06-production-pitfalls-faq.md    # 生产环境 5 大避坑铁律与排雷手册
+    └── 06-production-pitfalls-faq.md    # 生产环境 7 大避坑铁律与排雷手册
 ```
 
 ---

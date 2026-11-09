@@ -57,6 +57,16 @@ def _load_fallback_dotenv(path: Path):
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env_path = BASE_DIR / ".env"
+_load_fallback_dotenv(env_path)
+
+# 尝试载入自动入库引擎
+try:
+    from fnos_media_auto_ingest import ingest_movie
+except ImportError:
+    try:
+        from scripts.fnos_media_auto_ingest import ingest_movie
+    except ImportError:
+        ingest_movie = None
 if env_path.exists():
     try:
         from dotenv import load_dotenv
@@ -618,7 +628,7 @@ def run_daily_radar():
         print("  待播清单为空。")
 
     # 2. IMDb 高分新片 7 天字幕缓冲巡检
-    print("[2/5] IMDb 7+ 高分新片缓冲队列校验...")
+    print("[2/5] IMDb 7+ 高分新片缓冲队列校验与自动入库...")
     queue = load_buffer_queue()
     today_iso = datetime.date.today().isoformat()
     remaining = []
@@ -628,23 +638,54 @@ def run_daily_radar():
             matured.append(q)
         else:
             remaining.append(q)
+
     if matured:
-        print(f"  🎉 检出 {len(matured)} 部新片已满 7 天字幕成熟期，转入自动入库阶段！")
+        print(f"  🎉 检出 {len(matured)} 部新片已满 7 天字幕成熟期，启动真实入库流水线...")
+        for q in matured:
+            zh = q.get("zh_title") or q.get("title")
+            year = q.get("year")
+            if ingest_movie:
+                ingest_res = ingest_movie(zh, year)
+                if ingest_res.get("status") == "success":
+                    print(f"  ✔ 《{zh}》 实实验收通过，STRM 已落地: {ingest_res.get('strm_file')}")
+                elif ingest_res.get("status") == "no_source":
+                    print(f"  ⏳ 《{zh}》 满 7 天但盘搜暂未发现有效分享源，保留在队列重试。")
+                    remaining.append(q)
+                else:
+                    print(f"  ⏳ 《{zh}》 转存处理中: {ingest_res.get('message')}，保留在队列追踪。")
+                    remaining.append(q)
+            else:
+                print(f"  ℹ 《{zh}》 缓冲期满，建议运行 scripts/fnos_media_auto_ingest.py 进行入库。")
         save_buffer_queue(remaining)
     else:
         print("  当前暂无成熟期满新片。")
 
-    # 3. SubHD 字幕成熟出库校验
+    # 3. SubHD 字幕成熟出库校验 (主动嗅探)
     print("[3/5] SubHD 字幕成熟度嗅探校验...")
-    if queue:
-        for q in queue:
+    if remaining:
+        updated_remaining = []
+        for q in remaining:
             zh = q.get("zh_title") or q.get("title")
+            year = q.get("year")
+            is_mat = False
+            tag = None
             if zh:
                 is_mat, tag = check_subhd_mature(zh)
-                if is_mat:
-                    print(f"  🟢 《{zh}》 检测到精校字幕提前成熟 (命中: {tag})，提前出库！")
-                else:
+
+            if is_mat:
+                print(f"  🟢 《{zh}》 检测到精校字幕提前成熟 (命中: {tag})，提前出库！")
+                if ingest_movie:
+                    ingest_res = ingest_movie(zh, year)
+                    if ingest_res.get("status") == "success":
+                        print(f"  ✔ 《{zh}》 实实验收通过，提前入库成功: {ingest_res.get('strm_file')}")
+                        continue  # 成功落盘，从队列中移出
+                    else:
+                        print(f"  ⏳ 《{zh}》 字幕已出但片源尚未完全落地: {ingest_res.get('message')}")
+            else:
+                if zh:
                     print(f"  ⏳ 《{zh}》 暂无精校字幕，保持倒计时。")
+            updated_remaining.append(q)
+        save_buffer_queue(updated_remaining)
     else:
         print("  当前暂无待嗅探的字幕缓冲项目。")
 
@@ -698,6 +739,11 @@ def main():
     # series
     subparsers.add_parser("series", help="巡检长周期季播美剧完结状态")
 
+    # ingest
+    p_ingest = subparsers.add_parser("ingest", help="手动触发一部影片的真实入库与 STRM 生成")
+    p_ingest.add_argument("title", help="影片中文名")
+    p_ingest.add_argument("--year", type=int, default=None, help="发行年份 (可选)")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -749,6 +795,13 @@ def main():
             print(f"未找到与 《{args.query}》 相关的番剧。")
     elif args.command == "series":
         check_series_tracker()
+    elif args.command == "ingest":
+        if ingest_movie:
+            print(f"🎬 启动《{args.title}》全自动闭环入库...")
+            res = ingest_movie(args.title, args.year)
+            print(json.dumps(res, ensure_ascii=False, indent=2))
+        else:
+            print("❌ 无法导入 fnos_media_auto_ingest 模块，请检查 scripts/fnos_media_auto_ingest.py 是否存在。")
 
 
 if __name__ == "__main__":
