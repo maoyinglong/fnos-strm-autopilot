@@ -296,10 +296,18 @@ bash quickstart.sh
 
 ### 标准生产部署流程
 
-#### 步骤一：飞牛应用中心安装基础套件
-1. 登录飞牛 NAS 桌面 -> **应用中心**；
-2. 搜索并安装 **`SmartStrm`**；
-3. 打开 SmartStrm 控制台（`http://<NAS_IP>:8024`），在【存储管理】中扫码绑定 **115 开放平台 (open115)** 与 **夸克网盘TV (quark_tv)**。
+#### 步骤一：飞牛应用中心与 Docker 核心组件就绪
+本项目依赖的两个核心底层服务，在飞牛私有云上均可极速就绪：
+
+1. **安装 SmartStrm（必选，STRM 直链生成）**：
+   - 登录飞牛 NAS 桌面 -> **应用中心**，搜索并安装 **`SmartStrm`**；
+   - 打开控制台（`http://<NAS_IP>:8024`），在【存储管理】扫码绑定 **115 开放平台 (open115)** 与 **夸克网盘TV (quark_tv)**。
+2. **部署 PanSou 搜盘引擎（必选，全自动入库核心）**：
+   - 在飞牛终端（SSH）执行 1 行 Docker 命令一键拉起（开机自启，仅需 20MB 内存）：
+     ```bash
+     docker run -d --name pansou --restart always -p 8888:8888 ghcr.io/fish2018/pansou:latest
+     ```
+   - *详细 Docker 图形化创建与转存服务配置请参阅：[PanSou 与转存部署实操指南](docs/07-pansou-and-quark-autosave-guide.md)*。
 
 #### 步骤二：环境配置与自定义参数
 编辑 `.env` 填入你的配置（详见 [.env.example](.env.example)）：
@@ -308,6 +316,8 @@ DOUBAN_UID="your_douban_id"               # 你的豆瓣个人主页后缀 ID
 TMDB_API_KEY="your_tmdb_api_key_here"      # TMDb 开发者 API Key (免费申请)
 WATCHMODE_API_KEY="your_watchmode_key"    # Watchmode API Key (每月 2500 次免费)
 SMARTSTRM_BASE_URL="http://127.0.0.1:8024" # SmartStrm 本地访问地址
+PANSOU_API_URL="http://127.0.0.1:8888"    # PanSou 搜盘 API 端点
+SMARTSTRM_ADMIN_PASSWORD="your_password"  # SmartStrm 管理密码 (用于触发自动扫盘)
 ```
 
 #### 步骤三：验证核心功能 (自带演示基准)
@@ -367,8 +377,8 @@ fnos-strm-autopilot/
 │   └── crontab.example                 # 错峰自动化定时任务链
 ├── scripts/
 │   ├── quickstart.sh                   # 一键极速起航引导
-│   ├── verify_setup.py                 # 一键环境诊断与连通性自检工具
-│   ├── fnos_watchmode_autopilot.py     # 8大玩法核心调度中枢
+│   ├── verify_setup.py                 # 一键环境诊断与全链路深度自检工具 (9大检查)
+│   ├── fnos_watchmode_autopilot.py     # 9大玩法核心调度中枢
 │   ├── fnos_media_auto_ingest.py       # 影视自动转存与STRM闭环入库引擎 (带实实验收门禁)
 │   ├── smartstrm_fnos_mirror.py        # 本地直链增量镜像同步器 (带 --delete)
 │   └── fnos_watched_cleaner.py         # 「看完即焚」空间自治清理引擎 (支持 --confirm-delete)
@@ -378,7 +388,8 @@ fnos-strm-autopilot/
     ├── 03-douban-rss-and-radar.md       # 豆瓣 RSS 捕获与出种雷达
     ├── 04-subhd-probe-and-buffer.md     # SubHD 探针与 7天缓冲队列
     ├── 05-watched-cleaner-sop.md        # 看完即焚与白名单守护规约
-    └── 06-production-pitfalls-faq.md    # 生产环境 7 大避坑铁律与排雷手册
+    ├── 06-production-pitfalls-faq.md    # 生产环境 7 大避坑铁律与排雷手册
+    └── 07-pansou-and-quark-autosave-guide.md # PanSou 搜盘与自动转存 Docker 实操手册
 ```
 
 ---

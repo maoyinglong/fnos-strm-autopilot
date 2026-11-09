@@ -49,8 +49,9 @@ echo -e "\n${BOLD}${BLUE}正在执行一键网络与连通性自检...${RESET}"
 python3 scripts/verify_setup.py
 
 echo -e "${BOLD}${GREEN}✔ 准备就绪！你可以立即运行以下命令进行体验：${RESET}"
-echo -e "  - 测试豆瓣想看同步: ${BOLD}python3 scripts/fnos_watchmode_autopilot.py douban --dry-run${RESET}"
+echo -e "  - 测试豆瓣想看同步:   ${BOLD}python3 scripts/fnos_watchmode_autopilot.py douban --dry-run${RESET}"
 echo -e "  - 测试 SubHD 字幕探针: ${BOLD}python3 scripts/fnos_watchmode_autopilot.py sub \"死侍与金刚狼\"${RESET}"
-echo -e "  - 测试 TMDb 刮削:     ${BOLD}python3 scripts/fnos_watchmode_autopilot.py tmdb \"奥本海默\"${RESET}"
+echo -e "  - 测试 TMDb 刮削:       ${BOLD}python3 scripts/fnos_watchmode_autopilot.py tmdb \"奥本海默\"${RESET}"
+echo -e "  - 测试单片闭环入库:   ${BOLD}python3 scripts/fnos_watchmode_autopilot.py ingest \"死侍与金刚狼\" --year 2024${RESET}"
 echo -e "  - 运行全域雷达巡检:   ${BOLD}python3 scripts/fnos_watchmode_autopilot.py radar${RESET}"
 echo -e "${BOLD}${BLUE}==============================================================================${RESET}\n"
