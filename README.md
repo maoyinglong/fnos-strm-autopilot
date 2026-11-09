@@ -320,6 +320,14 @@ PANSOU_API_URL="http://127.0.0.1:8888"    # PanSou 搜盘 API 端点
 SMARTSTRM_ADMIN_PASSWORD="your_password"  # SmartStrm 管理密码 (用于触发自动扫盘)
 ```
 
+> 💡 **新手极速必读：告别抓包与抓 Cookie！**
+> - **115 与夸克网盘**：100% 官方二维码手机扫码授权，**完全不需要手动抓取 Cookie 或提取 Token**；
+> - **豆瓣想看 UID**：手机豆瓣 App -> 点击头像进主页 -> 右上角【分享】->【复制链接】，末尾的一串字符即为 UID；
+> - **TMDb / Watchmode API**：官方免费注册即送，秒级签发；
+> - **SubHD 字幕探针 / Bangumi 番剧 / 看完即焚**：**完全免 Key、零门槛**，开箱即用！
+> 
+> 👉 *各平台详细手把手获取指南与注册指引请参阅：[全平台免费 API 与网盘扫码凭证获取保姆级指南 (docs/08-beginner-credentials-and-api-guide.md)](docs/08-beginner-credentials-and-api-guide.md)*。
+
 #### 步骤三：验证核心功能 (自带演示基准)
 即使尚未配置任何 Key，项目也内置了完整的演示数据集，可直接体验：
 ```bash
@@ -389,7 +397,8 @@ fnos-strm-autopilot/
     ├── 04-subhd-probe-and-buffer.md     # SubHD 探针与 7天缓冲队列
     ├── 05-watched-cleaner-sop.md        # 看完即焚与白名单守护规约
     ├── 06-production-pitfalls-faq.md    # 生产环境 7 大避坑铁律与排雷手册
-    └── 07-pansou-and-quark-autosave-guide.md # PanSou 搜盘与自动转存 Docker 实操手册
+    ├── 07-pansou-and-quark-autosave-guide.md # PanSou 搜盘与自动转存 Docker 实操手册
+    └── 08-beginner-credentials-and-api-guide.md # 全平台 API 与网盘扫码凭证获取保姆级指南
 ```
 
 ---
